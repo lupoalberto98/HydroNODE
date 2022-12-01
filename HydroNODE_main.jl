@@ -111,6 +111,37 @@ itp_Lday = interpolate(data_timepoints, data_x[:,1], itp_method)
 itp_P = interpolate(data_timepoints, data_x[:,2], itp_method)
 itp_T = interpolate(data_timepoints, data_x[:,3], itp_method)
 
+);
+
+# adjust start and stop date if necessary
+if df[1, "Date"] != train_start_date
+    train_start_date = maximum([df[1, "Date"],train_start_date])
+end
+
+if df[end, "Date"] != test_stop_date
+    test_stop_date = minimum([df[end, "Date"], test_stop_date])
+end
+
+# format data
+data_x, data_y, data_timepoints,
+train_x, train_y, train_timepoints, = prepare_data(df,
+(train_start_date, train_stop_date, test_start_date, test_stop_date),input_var_names,output_var_name)
+
+# normalize data
+norm_moments_in = [mean(data_x, dims=1); std(data_x, dims = 1)]
+
+norm_P = prep_norm(norm_moments_in[:,2])
+norm_T = prep_norm(norm_moments_in[:,3])
+
+# -------------------------------------------------------
+# interpolation
+
+itp_method = SteffenMonotonicInterpolation()
+
+itp_Lday = interpolate(data_timepoints, data_x[:,1], itp_method)
+itp_P = interpolate(data_timepoints, data_x[:,2], itp_method)
+itp_T = interpolate(data_timepoints, data_x[:,3], itp_method)
+
 
 # ===============================================================
 # Bucket model training and full model preparation
