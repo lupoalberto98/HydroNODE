@@ -42,11 +42,13 @@ function load_data(basin_id, data_path, source_data_set::String = "daymet")
     all_basin_ids = lpad.(gauge_meta.Column2,8,"0")
     basin_huc = lpad(gauge_meta.Column1[all_basin_ids.==basin_id][1],2,"0")
 
+    """
     println('\n')
     println("Basin ID: "*basin_id, '\n')
     println("Hydrologic unit code (HUC): "*basin_huc, '\n')
     println("Forcings data set: "*source_data_set, '\n')
-
+    """
+    
     path_forcing_data = joinpath(data_path, "basin_mean_forcing", source_data_set, basin_huc, basin_id*"_lump_cida_forcing_leap.txt")
     path_flow_data = joinpath(data_path, "usgs_streamflow", basin_huc, basin_id*"_streamflow_qc.txt")
 
@@ -59,18 +61,20 @@ function load_data(basin_id, data_path, source_data_set::String = "daymet")
     # 3. basin area [m^2]
     basin_info_forcing = readdlm(path_forcing_data)[1:3]
     area = basin_info_forcing[3]
-
+    
+    """
     println("Basin Data from forcings file:")
     println("Lat,    Elev,   Area [km^2]")
     println(round.(basin_info_forcing.*[1.0; 1.0; 10^-6], digits=2), '\n')
-
+    """
 
     gauge_meta_data = gauge_meta[findall(x -> x==parse(Int,basin_id),gauge_meta[:,2]),:]
+    """
     println("Gauging station name: ")
     println(gauge_meta_data[!,3][1], '\n')
     println(" Latitude,  Longitude    ")
     println(Matrix(gauge_meta_data[!,4:end-1]), '\n')
-
+    """
 
     # =================================================================
     # Flow data
@@ -119,40 +123,16 @@ end
 
 
 
-function prepare_data(df, train_test_windows::NTuple{4,Date}, x_var=names(df)[2:end-1], y_var=names(df)[end])
+function prepare_data(df, train_test_windows::NTuple{2,Date}, x_var=names(df)[2:end-1], y_var=names(df)[end])
     # format data
 
-    train_start_date, train_stop_date, test_start_date, test_stop_date = train_test_windows
+    start_date, stop_date = train_test_windows
+    
+    all_data = filter(row -> row.Date in collect(start_date:Day(1):stop_date), df)
 
-    train_data = filter(row -> row.Date in collect(train_start_date:Day(1):train_stop_date), df)
-    test_data = filter(row -> row.Date in collect(test_start_date:Day(1):test_stop_date), df)
-    all_data = filter(row -> row.Date in collect(train_start_date:Day(1):test_stop_date), df)
-
-    train_x = Matrix(train_data[:,x_var])
-    train_y = Vector(train_data[:,y_var])
-    test_x = Matrix(test_data[:,x_var])
-    test_y = Vector(test_data[:,y_var])
     data_x = Matrix(all_data[:,x_var])
     data_y = Vector(all_data[:,y_var])
-
-    all_times = collect(train_start_date:Day(1):test_stop_date)
-
-    train_timepoints = findall(x->x==train_start_date, all_times)[1]:findall(x->x==train_stop_date, all_times)[1]
-    train_timepoints = collect((train_timepoints.-1.0).*1.0)
-
-    test_timepoints = findall(x->x==test_start_date, all_times)[1]:findall(x->x==test_stop_date, all_times)[1]
-    test_timepoints = collect((test_timepoints.-1.0).*1.0)
-
-    data_timepoints = findall(x->x==train_start_date, all_times)[1]:findall(x->x==test_stop_date, all_times)[1]
-    data_timepoints = collect((data_timepoints.-1.0).*1.0)
-
-    println("Input variables: ")
-    println(x_var, '\n')
-    println("Output variable: ")
-    println(y_var, '\n')
-    println("Size: train_x=", size(train_x), " // train_y=", size(train_y))
-    println("Size: test_x= ", size(test_x), " //  test_y= ", size(test_y), '\n')
-
-    return data_x, data_y, data_timepoints, train_x, train_y, train_timepoints, test_x, test_y, test_timepoints
+    
+    return data_x, data_y
 
 end
