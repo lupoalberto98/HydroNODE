@@ -72,7 +72,7 @@ function prepare_multiple_basins(data_path, source_data_set::String = "daymet")
     seq_len = size(timepoints)[1]
     # initialize data containers
     data_x = Array{Float32}(undef, (seq_len, 3, 1, effecive_num_basins))
-    data_y = Array{Float32}(undef, (seq_len, 1, effecive_num_basins))
+    data_y = Array{Float32}(undef, (seq_len, 1, 1, effecive_num_basins))
     
     
     i = 1
@@ -99,7 +99,7 @@ function prepare_multiple_basins(data_path, source_data_set::String = "daymet")
             @assert(size(basin_x)==(seq_len, 3))
             @assert(size(basin_y)==(seq_len,))
             data_x[:,:,:, i] = basin_x
-            data_y[:,:,i] = basin_y
+            data_y[:,:,:,i] = basin_y
             # update counter
             i += 1
         end
